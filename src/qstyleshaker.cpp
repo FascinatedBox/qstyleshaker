@@ -1,7 +1,6 @@
 #include <QCommandLineParser>
 #include <QCoreApplication>
 #include <QDirIterator>
-#include <QHash>
 #include <QRegularExpression>
 #include <QSet>
 #include <QTextStream>
@@ -23,9 +22,17 @@ public:
     QList<QString> action_lines;
 };
 
-QHash<QString, QString> parseOptions(QCoreApplication *app,
-                                     int _argc,
-                                     char **_argv)
+class Options {
+public:
+    Options() {};
+
+    QString directory;
+    QString footer;
+    QString header;
+    QString stylesheet;
+};
+
+Options *parseOptions(QCoreApplication *app, int _argc, char **_argv)
 {
     QCoreApplication::setApplicationName("qstyleshaker");
     QCoreApplication::setApplicationVersion(".1");
@@ -56,18 +63,19 @@ QHash<QString, QString> parseOptions(QCoreApplication *app,
 
     parser.process(*app);
 
-    QHash<QString, QString> result;
-    result["directory"] = parser.value(directoryOption);
-    result["stylesheet"] = parser.value(stylesheetOption);
-    result["header"] = parser.value(headerOption);
-    result["footer"] = parser.value(footerOption);
+    Options *result = new Options;
 
-    if (result["directory"] == "") {
+    result->directory = parser.value(directoryOption);
+    result->stylesheet = parser.value(stylesheetOption);
+    result->header = parser.value(headerOption);
+    result->footer = parser.value(footerOption);
+
+    if (result->directory == "") {
         qCritical("qstyleshaker: No directory (-d, --directory) given. Stopping.");
         ::exit(EXIT_FAILURE);
     }
 
-    if (result["stylesheet"] == "") {
+    if (result->stylesheet == "") {
         qCritical("qstyleshaker: No stylesheet (-s, --stylesheet) given. Stopping.");
         ::exit(EXIT_FAILURE);
     }
@@ -486,14 +494,14 @@ int main(int argc, char *argv[])
     init_parent_table();
 
     auto options = parseOptions(&app, argc, argv);
-    auto path_list = build_dir_list(options["directory"]);
+    auto path_list = build_dir_list(options->directory);
     auto class_set = get_styleable_classes_used(path_list);
-    auto stylesheet_text = stylesheet_to_string(options["stylesheet"]);
+    auto stylesheet_text = stylesheet_to_string(options->stylesheet);
     stylesheet_text = decomment_stylesheet(stylesheet_text);
     auto stylesheet_blocks = stylesheet_to_blocks(stylesheet_text);
     stylesheet_blocks = shake_blocks(stylesheet_blocks, class_set);
-    print_file(options["header"]);
+    print_file(options->header);
     print_blocks(stylesheet_blocks);
-    print_file(options["footer"]);
+    print_file(options->footer);
     return EXIT_SUCCESS;
 }
