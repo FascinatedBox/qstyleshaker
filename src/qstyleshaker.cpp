@@ -26,7 +26,7 @@ class Options {
 public:
     Options() {};
 
-    QString directory;
+    QList<QString> directories;
     QString footer;
     QString header;
     QString stylesheet;
@@ -65,13 +65,13 @@ Options *parseOptions(QCoreApplication *app, int _argc, char **_argv)
 
     Options *result = new Options;
 
-    result->directory = parser.value(directoryOption);
+    result->directories = parser.values(directoryOption);
     result->stylesheet = parser.value(stylesheetOption);
     result->header = parser.value(headerOption);
     result->footer = parser.value(footerOption);
 
-    if (result->directory == "") {
-        qCritical("qstyleshaker: No directory (-d, --directory) given. Stopping.");
+    if (result->directories.size() == 0) {
+        qCritical("qstyleshaker: No directories (-d, --directory) given. Stopping.");
         ::exit(EXIT_FAILURE);
     }
 
@@ -83,7 +83,7 @@ Options *parseOptions(QCoreApplication *app, int _argc, char **_argv)
     return result;
 }
 
-QList<QString> build_dir_list(QString basedir)
+QList<QString> read_dir_for_targets(QString basedir)
 {
     QDirIterator it(basedir);
     QList<QString> result;
@@ -99,6 +99,17 @@ QList<QString> build_dir_list(QString basedir)
 
         result.append(path);
     }
+
+    return result;
+}
+
+
+QList<QString> read_all_dirs(QList<QString> dirlist)
+{
+    QList<QString> result;
+
+    foreach (QString dir, dirlist)
+        result.append(read_dir_for_targets(dir));
 
     return result;
 }
@@ -494,7 +505,7 @@ int main(int argc, char *argv[])
     init_parent_table();
 
     auto options = parseOptions(&app, argc, argv);
-    auto path_list = build_dir_list(options->directory);
+    auto path_list = read_all_dirs(options->directories);
     auto class_set = get_styleable_classes_used(path_list);
     auto stylesheet_text = stylesheet_to_string(options->stylesheet);
     stylesheet_text = decomment_stylesheet(stylesheet_text);
