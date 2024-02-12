@@ -15,7 +15,7 @@ Enter `qstyleshaker`, a very basic tool for tree shaking Qt css files.
 ### Usage
 
 ```
-Usage: ./qstyleshaker [options]
+Usage: qstyleshaker [options]
 Tree shaker for Qt Stylesheets
 
 Options:
@@ -24,6 +24,7 @@ Options:
   -d, --directory <directory>    Use source files in <directory>.
   -f, --footer <footer>          Print <footer>'s content at the bottom of
                                  output.
+  -p, --prefix <prefix>          Add <prefix> to *all* selectors.
   -t, --top <header>             Print <header>'s content at the top of output.
   -s, --stylesheet <stylesheet>  Use <stylesheet> as a source.
 ```

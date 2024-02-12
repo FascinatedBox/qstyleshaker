@@ -29,6 +29,7 @@ public:
     QList<QString> directories;
     QString footer;
     QString header;
+    QString prefix;
     QString stylesheet;
 };
 
@@ -51,6 +52,11 @@ Options *parseOptions(QCoreApplication *app, int _argc, char **_argv)
             QCoreApplication::translate("main", "footer"));
     parser.addOption(footerOption);
 
+    QCommandLineOption prefixOption(QStringList() << "p" << "prefix",
+            QCoreApplication::translate("main", "Add <prefix> to *all* selectors."),
+            QCoreApplication::translate("main", "prefix"));
+    parser.addOption(prefixOption);
+
     QCommandLineOption headerOption(QStringList() << "t" << "top",
             QCoreApplication::translate("main", "Print <header>'s content at the top of output."),
             QCoreApplication::translate("main", "header"));
@@ -66,6 +72,7 @@ Options *parseOptions(QCoreApplication *app, int _argc, char **_argv)
     Options *result = new Options;
 
     result->directories = parser.values(directoryOption);
+    result->prefix = parser.value(prefixOption);
     result->stylesheet = parser.value(stylesheetOption);
     result->header = parser.value(headerOption);
     result->footer = parser.value(footerOption);
@@ -472,6 +479,18 @@ void print_file(QString path)
     f.close();
 }
 
+void apply_prefix_to_block_selectors(Options *o, QList<Block *> blocks)
+{
+    if (o->prefix == "")
+        return;
+
+    QString prefix = o->prefix + " ";
+
+    foreach (Block *b, blocks)
+        for (int i = 0;i < b->selector_lines.size();i++)
+            b->selector_lines[i].prepend(prefix);
+}
+
 void print_blocks(QList<Block *> blocks)
 {
     bool first = true;
@@ -511,6 +530,7 @@ int main(int argc, char *argv[])
     stylesheet_text = decomment_stylesheet(stylesheet_text);
     auto stylesheet_blocks = stylesheet_to_blocks(stylesheet_text);
     stylesheet_blocks = shake_blocks(stylesheet_blocks, class_set);
+    apply_prefix_to_block_selectors(options, stylesheet_blocks);
     print_file(options->header);
     print_blocks(stylesheet_blocks);
     print_file(options->footer);
